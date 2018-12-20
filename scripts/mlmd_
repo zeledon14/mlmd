@@ -1,0 +1,398 @@
+#!/usr/bin/env python
+import os
+import shutil
+import numpy as np
+from sklearn import preprocessing
+from sklearn.externals import joblib
+import mlmd.tools.readers as readers
+import mlmd.tools.builders as builders
+import mlmd.machine_learning.mlt as mlt
+import mlmd.machine_learning.mlp as mlp
+import mlmd.MD_suit.MD_suit as MD
+import argparse
+
+parser = argparse.ArgumentParser(description='Paramenters for mlmd')
+
+parser.add_argument("-mode",help="mode of the mlmd either create_potential or perform_md",\
+dest="mode", type=str, required=True)
+
+parser.add_argument("-training_file",\
+help="path to the training file",\
+dest="training_file", type=str, default= False)
+
+parser.add_argument("-potential_dir",\
+help="path to the potential directory",\
+dest="potential_dir", type=str, default= False)
+
+parser.add_argument("-structure_file",\
+help="path to the file with the input structure for md",\
+dest="structure_file", type=str, default= False)
+
+parser.add_argument("-md_file",\
+help="path to the file with parameters for md",\
+dest="md_file", type=str, default= False)
+
+input_para= vars(parser.parse_args())
+mode= input_para['mode']
+
+if mode == 'create_potential':
+	#checking that there is a training file
+	if input_para['training_file'] != False and os.path.isfile(input_para['training_file']):
+		path_to_training= input_para['training_file']
+		#load paramters for feature calculations and training
+		path_xyz_log,pote_name, code, feature_parameters,\
+		GBR_E_parameters, GBR_F_parameters, nn_E_parameters, nn_F_parameters= readers.load_training(path_to_training)
+
+		pote_name = feature_parameters['pote_name']
+		trans = feature_parameters['trans']
+		eta2b = feature_parameters['eta2b']
+		Rp = feature_parameters['Rp']
+		eta3b = feature_parameters['eta3b']
+		cos_p = feature_parameters['cos_p']
+		validation_percentage = feature_parameters['validation_percentage']
+		#stract structures information for training
+		if code == 1:
+			species_simb, stru_names,stru,ftot_stru,\
+			ener= readers.load_abinit_structures(path_xyz_log.strip())dd
+		if code == 2:
+			species_simb, stru_names,stru,ftot_stru,\
+			ener= readers.load_structures_from_xyz_log(path_xyz_log.strip())
+		if code == 3:
+			species_simb, stru_names,stru,ftot_stru,\
+			ener= readers.load_vasp_structures(path_xyz_log.strip())
+		#calculate the featre representation of the structure
+		#X-> FBP (numb_struc, numb_of_features)
+		#DX -> Derivative of FBP
+		#DX dimensions (structures, atoms_in_structure, number_of_features, xyz_components)
+		#feat_2b numb_of_2-body featues
+		#feat_3b numb_of_3-body featues
+		feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b,\
+								Rp, eta3b, cos_p,species_simb, stru_names, stru)
+
+
+
+		#training selecting models
+		E_evaluation=[]
+		E_evaluation_names=[]
+		F_evaluation=[]
+		F_evaluation_names=[]
+		model_E_numb=0
+		model_F_numb=0
+		if GBR_E_parameters['GBR_E_models_to_train'] > 0 and \
+			GBR_F_parameters['GBR_F_models_to_train'] > 0:
+			#loading parameters for the GBR E models
+			GBR_E_models_to_train = GBR_E_parameters['GBR_E_models_to_train']
+			GBR_E_n_estimators = GBR_E_parameters['GBR_E_n_estimators']
+			GBR_E_max_depth = GBR_E_parameters['GBR_E_max_depth']
+			GBR_E_min_samples_split = GBR_E_parameters['GBR_E_min_samples_split']
+			GBR_E_min_samples_leaf = GBR_E_parameters['GBR_E_min_samples_leaf']
+			GBR_E_learning_rate = GBR_E_parameters['GBR_E_learning_rate']
+			#loading parameters for the GBR F models
+			GBR_F_models_to_train = GBR_F_parameters['GBR_F_models_to_train']
+			GBR_F_n_estimators = GBR_F_parameters['GBR_F_n_estimators']
+			GBR_F_max_depth = GBR_F_parameters['GBR_F_max_depth']
+			GBR_F_min_samples_split = GBR_F_parameters['GBR_F_min_samples_split']
+			GBR_F_min_samples_leaf = GBR_F_parameters['GBR_F_min_samples_leaf']
+			GBR_F_learning_rate = GBR_F_parameters['GBR_F_learning_rate']
+			#BGR energy training
+			for GBR_i in range(GBR_E_models_to_train[0]):
+				os.mkdir('model_E_%d'%(model_E_numb))
+				#create training objetc
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				#creating the training and validation sets
+				training.preprocessing_X_FBP(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
+				n_estimators = GBR_E_n_estimators[GBR_i]
+				max_depth = GBR_E_max_depth[GBR_i]
+				min_samples_split = GBR_E_min_samples_split[GBR_i] 
+				min_samples_leaf = GBR_E_min_samples_leaf[GBR_i]
+				learning_rate = GBR_E_learning_rate[GBR_i]
+				parameters_dict = {'n_estimators': n_estimators, 'max_depth': max_depth, 'min_samples_split': min_samples_split,
+					  'learning_rate': learning_rate, 'loss': 'ls', 'min_samples_leaf':min_samples_leaf}
+				mse= training.GBR_E_model('model_E_%d'%(model_E_numb), parameters_dict)
+				E_evaluation.append(mse)
+				E_evaluation_names.append('model_E_%d'%(model_E_numb))
+				model_E_numb +=1
+			#GBR force training
+			for GBR_i in range(GBR_F_models_to_train[0]):
+				os.mkdir('model_F_%d'%(model_F_numb))
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				training.preprocessing_DX_DFBP(validation_percentage[0], 'model_F_%d'%(model_F_numb))
+				n_estimators = GBR_F_n_estimators[GBR_i]
+				max_depth = GBR_F_max_depth[GBR_i]
+				min_samples_split = GBR_F_min_samples_split[GBR_i] 
+				min_samples_leaf = GBR_F_min_samples_leaf[GBR_i]
+				learning_rate = GBR_F_learning_rate[GBR_i]
+				parameters_dict = {'n_estimators': n_estimators, 'max_depth': max_depth, 'min_samples_split': min_samples_split,
+					  'learning_rate': learning_rate, 'loss': 'ls', 'min_samples_leaf':min_samples_leaf}
+		#		print 'GBR_F_%s_%d'%(pote_name, GBR_i)
+				mse1= training.GBR_F_model('model_F_%d'%(model_F_numb), 0,parameters_dict) #x
+				mse2= training.GBR_F_model('model_F_%d'%(model_F_numb), 1,parameters_dict) #y
+				mse3= training.GBR_F_model('model_F_%d'%(model_F_numb), 2,parameters_dict) #z
+				mse= (mse1 + mse2 + mse3)/3.0
+				F_evaluation.append(mse)
+				F_evaluation_names.append('model_F_%d'%(model_F_numb))
+				model_F_numb +=1
+		if GBR_E_parameters['GBR_E_models_to_train'] > 0 and \
+			GBR_F_parameters['GBR_F_models_to_train'] = 0:
+			#loading parameters for the GBR E models
+			GBR_E_models_to_train = GBR_E_parameters['GBR_E_models_to_train']
+			GBR_E_n_estimators = GBR_E_parameters['GBR_E_n_estimators']
+			GBR_E_max_depth = GBR_E_parameters['GBR_E_max_depth']
+			GBR_E_min_samples_split = GBR_E_parameters['GBR_E_min_samples_split']
+			GBR_E_min_samples_leaf = GBR_E_parameters['GBR_E_min_samples_leaf']
+			GBR_E_learning_rate = GBR_E_parameters['GBR_E_learning_rate']
+			#BGR energy training
+			for GBR_i in range(GBR_E_models_to_train[0]):
+				os.mkdir('model_E_%d'%(model_E_numb))
+				#create training objetc
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				#creating the training and validation sets
+				training.preprocessing_X_FBP(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
+				n_estimators = GBR_E_n_estimators[GBR_i]
+				max_depth = GBR_E_max_depth[GBR_i]
+				min_samples_split = GBR_E_min_samples_split[GBR_i] 
+				min_samples_leaf = GBR_E_min_samples_leaf[GBR_i]
+				learning_rate = GBR_E_learning_rate[GBR_i]
+				parameters_dict = {'n_estimators': n_estimators, 'max_depth': max_depth, 'min_samples_split': min_samples_split,
+					  'learning_rate': learning_rate, 'loss': 'ls', 'min_samples_leaf':min_samples_leaf}
+				mse= training.GBR_E_model('model_E_%d'%(model_E_numb), parameters_dict)
+				E_evaluation.append(mse)
+				E_evaluation_names.append('model_E_%d'%(model_E_numb))
+				model_E_numb +=1
+								
+		if nn_E_parameters['nn_E_models_to_train'] > 0 and \
+			nn_F_parameters['nn_F_models_to_train'] > 0:
+			#loading parameters for the nn E models
+			nn_E_models_to_train = nn_E_parameters['nn_E_models_to_train']
+			nn_E_training_steps = nn_E_parameters['nn_E_training_steps']
+			nn_E_batch_size = nn_E_parameters['nn_E_batch_size']
+			nn_E_learning_rate = nn_E_parameters['nn_E_learning_rate']
+			nn_E_architecture = nn_E_parameters['nn_E_arch']
+			#loading parameters for the nn F models
+			nn_F_models_to_train = nn_F_parameters['nn_F_models_to_train']
+			nn_F_training_steps = nn_F_parameters['nn_F_training_steps']
+			nn_F_batch_size = nn_F_parameters['nn_F_batch_size']
+			nn_F_learning_rate = nn_F_parameters['nn_F_learning_rate']
+			nn_F_architecture = nn_F_parameters['nn_F_arch']
+			#training the Energy models
+			for nn_i in range(nn_E_models_to_train[0]):
+				name_to_save= 'model_E_%d'%(model_E_numb)
+				os.mkdir(name_to_save)
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				#creating the training and validation sets
+				training.preprocessing_X_FBP(validation_percentage[0], name_to_save)
+				nn_E_arch= nn_E_architecture[nn_i]
+				learning_rate= nn_E_learning_rate[nn_i]
+				training_steps= nn_E_training_steps[nn_i]
+				tranining_batches_size= nn_E_batch_size[nn_i]
+				weights, biases= training.create_E_nn_variables(nn_E_arch)
+				mse, vali_arra,trai_arra= training.nn_E_model(name_to_save, weights, biases,\
+														nn_E_arch, learning_rate,\
+														training_steps, tranining_batches_size)
+				E_evaluation.append(mse)
+				E_evaluation_names.append('model_E_%d'%(model_E_numb))
+				model_E_numb +=1
+			#training the force models
+			for nn_i in range(nn_F_models_to_train[0]):
+				name_to_save= 'model_F_%d'%(model_F_numb)
+				os.mkdir(name_to_save)
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				training.preprocessing_DX_DFBP(validation_percentage[0], name_to_save)
+				nn_F_arch= nn_F_architecture[nn_i]
+				learning_rate= nn_F_learning_rate[nn_i]
+				training_steps= nn_F_training_steps[nn_i]
+				tranining_batches_size= nn_F_batch_size[nn_i]
+				weights, biases= training.create_E_nn_variables(nn_F_arch)
+				mse_arra=[]
+				for comp in range(3):
+					mse, vali_arra,trai_arra= training.nn_F_model(name_to_save,comp, weights, biases,\
+															nn_F_arch, learning_rate,\
+															training_steps, tranining_batches_size)
+					mse_arra.append(mse)
+				mse= np.average(mse_arra)
+				F_evaluation.append(mse)
+				F_evaluation_names.append('model_F_%d'%(model_F_numb))
+				model_F_numb +=1
+				
+		if nn_E_parameters['nn_E_models_to_train'] > 0 and \
+			nn_F_parameters['nn_F_models_to_train'] = 0:
+			#loading parameters for the nn E models
+			nn_E_models_to_train = nn_E_parameters['nn_E_models_to_train']
+			nn_E_training_steps = nn_E_parameters['nn_E_training_steps']
+			nn_E_batch_size = nn_E_parameters['nn_E_batch_size']
+			nn_E_learning_rate = nn_E_parameters['nn_E_learning_rate']
+			nn_E_architecture = nn_E_parameters['nn_E_arch']
+			#training the Energy models
+			for nn_i in range(nn_E_models_to_train[0]):
+				name_to_save= 'model_E_%d'%(model_E_numb)
+				os.mkdir(name_to_save)
+				training= mlt.mlt(ener, X, ftot_stru, DX)
+				#creating the training and validation sets
+				training.preprocessing_X_FBP(validation_percentage[0], name_to_save)
+				nn_E_arch= nn_E_architecture[nn_i]
+				learning_rate= nn_E_learning_rate[nn_i]
+				training_steps= nn_E_training_steps[nn_i]
+				tranining_batches_size= nn_E_batch_size[nn_i]
+				weights, biases= training.create_E_nn_variables(nn_E_arch)
+				mse, vali_arra,trai_arra= training.nn_E_model(name_to_save, weights, biases,\
+														nn_E_arch, learning_rate,\
+														training_steps, tranining_batches_size)
+				E_evaluation.append(mse)
+				E_evaluation_names.append('model_E_%d'%(model_E_numb))
+				model_E_numb +=1
+				
+		E_sorted= np.argsort(np.array(E_evaluation))
+		F_sorted= np.argsort(np.array(F_evaluation))
+		if os.path.isdir(pote_name) :
+			if len(E_sorted) > 0:
+				for n, i in enumerate(E_sorted):
+					shutil.rmtree(E_evaluation_names[i])
+			if len(F_sorted) > 0:
+				for n, i in enumerate(F_sorted):
+					shutil.rmtree(F_evaluation_names[i])
+			print '\
+			\n **********************************************************\
+			\n * The potential %s already exits, select a different name*\
+			\n **********************************************************' %pote_name
+		else:
+			os.mkdir(pote_name)
+			if len(E_sorted) > 0:
+				for n, i in enumerate(E_sorted):
+					if n == 0:
+						shutil.move(E_evaluation_names[i], pote_name+'/E')
+					else:
+						shutil.rmtree(E_evaluation_names[i])
+			if len(F_sorted) > 0:
+				for n, i in enumerate(F_sorted):
+					if n == 0:
+						shutil.move(F_evaluation_names[i], pote_name+'/F')
+					else:
+						shutil.rmtree(F_evaluation_names[i])
+			np.save(pote_name+'/feature_parameters', feature_parameters)
+		
+	else:
+		print '\
+		\n ************************************************\
+		\n * The selected mode was create_potential,      *\
+		\n * however there is no training_file, use:      *\
+		\n * -training_file <path to the training file>   *\
+		\n * when using the create_potential mode, while  *\
+		\n * runing the mlmd_ script                      *\
+		\n ************************************************'
+	
+if mode == 'perform_md':
+	md_flag= 0
+	#if 'potential_dir' in input_para:
+	if input_para['potential_dir'] != False and os.path.isdir(input_para['potential_dir']):
+		md_flag+= 1
+	else: 
+		print '\
+		\n ***************************************************\
+		\n * The selected mode was perform_md,               *\
+		\n * however there is no potential_dir, use:         *\
+		\n * -potential_dir <path to the potential directory>*\
+		\n * when using the perform_md mode, while           *\
+		\n * runing the mlmd_ script                         *\
+		\n ***************************************************'
+		
+	#if 'structure_file' in input_para:
+	if input_para['structure_file'] != False and os.path.isfile(input_para['structure_file']):
+		md_flag+= 1
+	else: 
+		print '\
+		\n ***************************************************\
+		\n * The selected mode was perform_md,               *\
+		\n * however there is no structure_file, use:        *\
+		\n * -structure_file <path to the structure file>    *\
+		\n * when using the perform_md mode, while           *\
+		\n * runing the mlmd_ script                         *\
+		\n ***************************************************'
+		
+	#if 'md_file' in input_para:
+	if input_para['md_file'] != False and os.path.isfile(input_para['md_file']):
+		md_flag+= 1
+	else: 
+		print '\
+		\n ***************************************************\
+		\n * The selected mode was perform_md,               *\
+		\n * however there is no md_file, use:               *\
+		\n * -md_file <path to the md file>                  *\
+		\n * when using the perform_md mode, while           *\
+		\n * runing the mlmd_ script                         *\
+		\n ***************************************************'
+		
+	if md_flag == 3:
+		
+		pote_name= input_para['potential_dir']
+		inpu_stru= input_para['structure_file']
+		inpu_md= input_para['md_file']
+
+		#loads feature parameters from pote_name
+		feature_parameters= np.load(pote_name+'/feature_parameters.npy').item()
+		trans = feature_parameters['trans']
+		eta2b = feature_parameters['eta2b']
+		Rp = feature_parameters['Rp']
+		eta3b = feature_parameters['eta3b']
+		cos_p = feature_parameters['cos_p']
+		stru_names= []
+		#loads initial structure
+		species_simb, stru= readers.load_md_init_stru(inpu_stru)
+		#read md parameters
+		Qmass, temp, dt, correc_steps, md_steps, exp_name= readers.get_md_parameters(inpu_md)
+		path_to_xyz= exp_name+'.xyz'
+		#creates mlp object and loads scalers
+		potential= mlp.mlp(pote_name)
+		#loads E and F potentials (GBR models)
+		potential.load_GBR_E_potential(pote_name)
+		potential.load_GBR_F_potential(pote_name)
+		#calculates feature representation for a given initial structure
+		feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru)
+		#scale the feature representation
+		#with the trainned scalers
+		X_scaled= potential.scaler_E.transform(X)
+		DXx_scaled= potential.scaler_Fx.transform(DX[0,:,:,0])
+		DXy_scaled= potential.scaler_Fy.transform(DX[0,:,:,1])
+		DXz_scaled= potential.scaler_Fz.transform(DX[0,:,:,2])
+		#predict E and F with ML potential for the inital structure
+		E_pred= potential.predict_E_GBR(X_scaled)
+		F_pred= potential.predict_F_GBR(DXx_scaled, DXy_scaled, DXz_scaled)
+
+		#initialization of MD variables
+		amu= readers.get_amu(species_simb, trans)
+		nat= len(species_simb[0])
+		s_in=1.0 #thermostat degree of freedom
+		s_in_dot= 0.0#time derivative of thermostat degree of freedom
+		r_in= stru[0].T
+		fcart_in= F_pred.T
+		v_in= MD.md_suit.init_vel_atoms(amu, temp,nat) #check units
+		#MD loop
+		s_arra= []
+		for _ in range(md_steps):
+			s_out, s_out_dot, r_out, v_out= MD.md_suit.md_nvt(r_in,fcart_in, v_in, amu, Qmass, dt, temp, s_in, s_in_dot,\
+				   correc_steps, 1,nat)
+			#print get_V_cm(amu, v_in)
+			#print '*********'
+			#recalculate forces and energies
+			#calculate features for r_out
+			#print r_out.T
+			#print '*********'
+			stru_t= np.array([r_out.T])
+			feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru_t)
+			#scale features from r_out
+			X_scaled= potential.scaler_E.transform(X)
+			DXx_scaled= potential.scaler_Fx.transform(DX[0,:,:,0])
+			DXy_scaled= potential.scaler_Fy.transform(DX[0,:,:,1])
+			DXz_scaled= potential.scaler_Fz.transform(DX[0,:,:,2])
+			#predict E and F with ML potential for r_out
+			E_pred= potential.predict_E_GBR(X_scaled)
+			F_pred= potential.predict_F_GBR(DXx_scaled, DXy_scaled, DXz_scaled)
+			
+			temp= readers.get_temp(amu, v_out)
+			readers.write_xyz(path_to_xyz,  E_pred, temp, species_simb, r_in)
+			
+			fcart_in= F_pred.T
+			s_in= s_out
+			s_arra.append(s_out)
+			s_in_dot= s_out_dot
+			r_in= r_out
+			v_in= v_out
