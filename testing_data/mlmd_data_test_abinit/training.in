@@ -1,0 +1,41 @@
+#training.in
+#setting up the training parameters
+# path where the data for training is stored
+path_to_data dft_data 
+#code used to generate the data
+#1-> abinit 2-> fireball 3-> vasp
+code 1
+spec_simb C O
+spec_Z 6 8
+fami_2b 2
+fami_3b 3 4
+potential_name C_O_test_1
+validation_percentage 20
+
+GBR_E_models_to_train  2
+GBR_E_n_estimators 650 550
+GBR_E_max_depth 7 5
+GBR_E_min_samples_split 2 4
+GBR_E_learning_rate 0.1732 0.35
+GBR_E_min_samples_leaf 3 5
+
+GBR_F_models_to_train  1
+GBR_F_n_estimators 900
+GBR_F_max_depth 8
+GBR_F_min_samples_split 2
+GBR_F_learning_rate 0.1732
+GBR_F_min_samples_leaf 3
+
+nn_E_models_to_train 2
+nn_E_learning_rate 0.0012 0.0009
+nn_E_training_steps 100 100
+nn_E_batch_size 25 30
+nn_E_architecture_1 152 80 20 1
+nn_E_architecture_2 152 80 40 20 1
+
+nn_F_models_to_train 2
+nn_F_learning_rate 0.0018 0.00009
+nn_F_training_steps 1000 1000
+nn_F_batch_size 100 250
+nn_F_architecture_1 152 80 20 1
+nn_F_architecture_2 152 80 40 20 1
