@@ -40,7 +40,7 @@ if mode == 'create_potential':
 	if input_para['training_file'] != False and os.path.isfile(input_para['training_file']):
 		path_to_training= input_para['training_file']
 		#load paramters for feature calculations and training
-		path_xyz_log,code, pote_name, feature_parameters,\
+		path_to_dft_data,code, pote_name, feature_parameters,\
 		GBR_E_parameters, GBR_F_parameters, nn_E_parameters, nn_F_parameters= readers.load_training(path_to_training)
 		code= code[0]
 		print 'code ', code, type(code)
@@ -55,15 +55,15 @@ if mode == 'create_potential':
 		if code == 1:
 			print '1'
 			species_simb, stru_names,stru,ftot_stru,\
-			ener= readers.load_abinit_structures(path_xyz_log.strip())
+			ener= readers.load_abinit_structures(path_to_dft_data.strip(), trans)
 		if code == 2:
 			print '2'
 			species_simb, stru_names,stru,ftot_stru,\
-			ener= readers.load_structures_from_xyz_log(path_xyz_log.strip())
+			ener= readers.load_structures_from_xyz_log(path_to_dft_data.strip())
 		if code == 3:
 			print '3'
 			species_simb, stru_names,stru,ftot_stru,\
-			ener= readers.load_vasp_structures(path_xyz_log.strip())
+			ener= readers.load_vasp_structures(path_to_dft_data.strip())
 		#calculate the featre representation of the structure
 		#X-> FBP (numb_struc, numb_of_features)
 		#DX -> Derivative of FBP
