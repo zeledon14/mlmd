@@ -238,9 +238,9 @@ def load_training(path_training):
 	nn_F_parameters={}
 	feature_parameters={}
 	for line in trai_data:
-		if re.search('^path_to_xyz_log', line):
+		if re.search('^path_to_data', line):
 			indi_path_xyz_log= 1
-			path_xyz_log= re.findall('path_to_xyz_log\s+([A-Z a-z 0-9 \ / _ - \. , & % $ @ *]*)', line)
+			path_xyz_log= re.findall('path_to_data\s+([A-Z a-z 0-9 \ / _ - \. , & % $ @ *]*)', line)
 			path_xyz_log= str(path_xyz_log[0])
 		if re.search('^code', line):
 			code = re.findall('code\s+([1-9 \s]*)',line)
