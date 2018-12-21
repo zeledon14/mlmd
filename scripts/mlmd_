@@ -216,7 +216,6 @@ if mode == 'create_potential':
 				
 		if nn_E_parameters['nn_E_models_to_train'] > 0 and \
 			nn_F_parameters['nn_F_models_to_train'] == 0:
-			nn_F_parameters['nn_F_models_to_train'] == 0:
 			#loading parameters for the nn E models
 			nn_E_models_to_train = nn_E_parameters['nn_E_models_to_train']
 			nn_E_training_steps = nn_E_parameters['nn_E_training_steps']
