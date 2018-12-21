@@ -42,7 +42,7 @@ if mode == 'create_potential':
 		#load paramters for feature calculations and training
 		path_xyz_log,pote_name, code, feature_parameters,\
 		GBR_E_parameters, GBR_F_parameters, nn_E_parameters, nn_F_parameters= readers.load_training(path_to_training)
-
+		print 'code ', code, type(code)
 		pote_name = feature_parameters['pote_name']
 		trans = feature_parameters['trans']
 		eta2b = feature_parameters['eta2b']
@@ -52,12 +52,15 @@ if mode == 'create_potential':
 		validation_percentage = feature_parameters['validation_percentage']
 		#stract structures information for training
 		if code == 1:
+			print '1'
 			species_simb, stru_names,stru,ftot_stru,\
 			ener= readers.load_abinit_structures(path_xyz_log.strip())
 		if code == 2:
+			print '2'
 			species_simb, stru_names,stru,ftot_stru,\
 			ener= readers.load_structures_from_xyz_log(path_xyz_log.strip())
 		if code == 3:
+			print '3'
 			species_simb, stru_names,stru,ftot_stru,\
 			ener= readers.load_vasp_structures(path_xyz_log.strip())
 		#calculate the featre representation of the structure
