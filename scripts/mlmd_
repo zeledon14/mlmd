@@ -40,7 +40,7 @@ if mode == 'create_potential':
 	if input_para['training_file'] != False and os.path.isfile(input_para['training_file']):
 		path_to_training= input_para['training_file']
 		#load paramters for feature calculations and training
-		path_xyz_log,pote_name, code, feature_parameters,\
+		path_xyz_log,code, pote_name, feature_parameters,\
 		GBR_E_parameters, GBR_F_parameters, nn_E_parameters, nn_F_parameters= readers.load_training(path_to_training)
 		print 'code ', code, type(code)
 		pote_name = feature_parameters['pote_name']
