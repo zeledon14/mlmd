@@ -29,7 +29,7 @@ def load_vasp_structures(dir_path):
     stru= np.array(stru)
     return species_simb, name, stru, ftot_stru, ener
 
-def load_abinit_structures(dir_path):
+def load_abinit_structures(dir_path, trans):
     fl_nms= os.listdir(dir_path) #file names
     comp_str='([a-z A-Z _ - & \. 0-9]+\.out)'
     fl_nms1= re.findall(comp_str,str(fl_nms))
@@ -40,11 +40,11 @@ def load_abinit_structures(dir_path):
     species_simb= []
     for ii, name_fl in enumerate(fl_nms1):
         print name_fl
-        nat, mass, latvec_in, strten_in,typat= get_nat_mass_latvec_in_strten_in(dir_path+'/'+name_fl)
+        nat, mass, latvec_in, strten_in,z_struc= get_nat_mass_latvec_in_strten_in(dir_path+'/'+name_fl, trans)
         xred, fcart, ener_p= get_xred_fcart(dir_path+'/'+name_fl, nat)
         stru.append(np.dot(latvec_in, xred).T)
         #print s.shape
-        species_simb.append(typat)
+        species_simb.append(z_struc)
         ener.append(ener_p)
         ftot_stru.append(fcart.T)
         name.append(name_fl)
@@ -63,16 +63,20 @@ def load_abinit_structures(dir_path):
     ftot_stru= np.multiply(ftot_stru, (27.2114/0.5291772108))
     return species_simb, name, stru, ftot_stru, ener
 
-def get_nat_mass_latvec_in_strten_in(path_to_file):
+def get_nat_mass_latvec_in_strten_in(path_to_file, trans):
     data= open(path_to_file).read()
     nat= int(re.findall('natom\s+([0-9]+)', data)[0])
     typat= map(int, re.findall('\s+typat\s+(.+)',data)[0].split())
     #znucl= map(float, re.findall('\s+znucl((?:\s+\d+.\d+\s+)+)',data))
     znucl= map(int, map(float, re.findall('\s+znucl\s+(.+)',data)[0].split()))
+    z_struc=[]
     mass=[]
-    #for i in typat:
-    #    mass.append(masses[znucl[i-1]])
-    #mass= np.array(mass)
+    trans_inv={}
+    for i in trans.keys():
+        trans_inv[trans[i]]= i    
+    for i in typat:
+        z_struc.append(trans_inv[znucl[i-1]])
+    z_struc= np.array(z_struc)
     a1= map(float, re.findall('R.1.=\s*(.\d+...\d+\s+.\d+...\d+\s+.\d+...\d+)', data)[0].split())
     a2= map(float, re.findall('R.2.=\s*(.\d+...\d+\s+.\d+...\d+\s+.\d+...\d+)', data)[0].split())
     a3= map(float, re.findall('R.3.=\s*(.\d+...\d+\s+.\d+...\d+\s+.\d+...\d+)', data)[0].split())
@@ -86,7 +90,8 @@ def get_nat_mass_latvec_in_strten_in(path_to_file):
     strten_in.append(np.float64(re.findall('sigma.3\s+1.=(\s+.\d+.\d+..\d+)', data)[0]))
     strten_in.append(np.float64(re.findall('sigma.2\s+1.=(\s+.\d+.\d+..\d+)', data)[0]))
     strten_in= np.array(strten_in)
-    return nat, mass, latvec_in, strten_in,typat
+    return nat, mass, latvec_in, strten_in,z_struc
+
 def get_xred_fcart(path_to_file, nat):
     #1 Ha/Bohr3 = 29421.02648438959 GPa
     data= open(path_to_file).readlines()
