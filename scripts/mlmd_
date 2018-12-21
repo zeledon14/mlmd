@@ -53,7 +53,7 @@ if mode == 'create_potential':
 		#stract structures information for training
 		if code == 1:
 			species_simb, stru_names,stru,ftot_stru,\
-			ener= readers.load_abinit_structures(path_xyz_log.strip())dd
+			ener= readers.load_abinit_structures(path_xyz_log.strip())
 		if code == 2:
 			species_simb, stru_names,stru,ftot_stru,\
 			ener= readers.load_structures_from_xyz_log(path_xyz_log.strip())
