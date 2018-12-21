@@ -133,7 +133,7 @@ if mode == 'create_potential':
 				F_evaluation_names.append('model_F_%d'%(model_F_numb))
 				model_F_numb +=1
 		if GBR_E_parameters['GBR_E_models_to_train'] > 0 and \
-			GBR_F_parameters['GBR_F_models_to_train'] = 0:
+			GBR_F_parameters['GBR_F_models_to_train'] == 0:
 			#loading parameters for the GBR E models
 			GBR_E_models_to_train = GBR_E_parameters['GBR_E_models_to_train']
 			GBR_E_n_estimators = GBR_E_parameters['GBR_E_n_estimators']
