@@ -9,7 +9,7 @@ spec_simb La Mn O
 spec_Z 57 25 8
 fami_2b 2
 fami_3b 3 4
-potential_name C_O_test_1
+potential_name potential_test
 validation_percentage 20
 
 GBR_E_models_to_train  2
