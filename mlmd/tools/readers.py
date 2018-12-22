@@ -72,6 +72,7 @@ def get_nat_mass_latvec_in_strten_in(path_to_file, trans):
     z_struc=[]
     mass=[]
     trans_inv={}
+    print 'trans ', trans
     for j in trans.keys():
         trans_inv[trans[j]]= j
     print  'trans_inv ', trans_inv   
