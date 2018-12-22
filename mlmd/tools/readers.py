@@ -72,8 +72,9 @@ def get_nat_mass_latvec_in_strten_in(path_to_file, trans):
     z_struc=[]
     mass=[]
     trans_inv={}
-    for i in trans.keys():
-        trans_inv[trans[i]]= i    
+    for j in trans.keys():
+        trans_inv[trans[j]]= j
+    print  'trans_inv ', trans_inv   
     for i in typat:
         z_struc.append(trans_inv[znucl[i-1]])
     z_struc= np.array(z_struc)
