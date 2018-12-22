@@ -30,12 +30,12 @@ nn_E_models_to_train 2
 nn_E_learning_rate 0.0012 0.0009
 nn_E_training_steps 100 100
 nn_E_batch_size 25 30
-nn_E_architecture_1 152 80 20 1
-nn_E_architecture_2 152 80 40 20 1
+nn_E_architecture_1 459 80 20 1
+nn_E_architecture_2 459 80 40 20 1
 
 nn_F_models_to_train 2
 nn_F_learning_rate 0.0018 0.00009
 nn_F_training_steps 1000 1000
 nn_F_batch_size 100 250
-nn_F_architecture_1 152 80 20 1
-nn_F_architecture_2 152 80 40 20 1
+nn_F_architecture_1 459 80 20 1
+nn_F_architecture_2 459 80 40 20 1
