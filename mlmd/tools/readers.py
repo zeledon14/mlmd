@@ -14,7 +14,7 @@ def load_vasp_structures(dir_path):
     species_simb= []
     for ii, fl in enumerate(fl_nms1):
         name_fl=fl.split('.')
-        print name_fl
+        #print name_fl
         stru_poscar= pc.code.vasp.read_poscar(dir_path+'/'+name_fl[0]+'.POSCAR')
         stru_outcar= pc.code.vasp.VaspOutput(dir_path+'/'+name_fl[0]+'.OUTCAR')
         #stru_outcar= pc.code.vasp.outcar(dir_path+'/'+name_fl[0]+'.OUTCAR')
