@@ -8,6 +8,7 @@ def load_vasp_structures(dir_path):
     comp_str='([a-z A-Z _ - & \. 0-9]+\.POSCAR)'
     fl_nms1= re.findall(comp_str,str(fl_nms))
     stru= []
+
     name= []
     ener= []
     ftot_stru= []
@@ -39,7 +40,7 @@ def load_abinit_structures(dir_path, trans):
     ftot_stru= []
     species_simb= []
     for ii, name_fl in enumerate(fl_nms1):
-        print name_fl
+        #print name_fl
         nat, mass, latvec_in, strten_in,z_struc= get_nat_mass_latvec_in_strten_in(dir_path+'/'+name_fl, trans)
         xred, fcart, ener_p= get_xred_fcart(dir_path+'/'+name_fl, nat)
         stru.append(np.dot(latvec_in, xred).T)
@@ -72,10 +73,10 @@ def get_nat_mass_latvec_in_strten_in(path_to_file, trans):
     z_struc=[]
     mass=[]
     trans_inv={}
-    print 'trans ', trans
+    #print 'trans ', trans
     for j in trans.keys():
         trans_inv[trans[j]]= j
-    print  'trans_inv ', trans_inv   
+    #print  'trans_inv ', trans_inv   
     for i in typat:
         z_struc.append(trans_inv[znucl[i-1]])
     z_struc= np.array(z_struc)
