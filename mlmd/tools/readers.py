@@ -161,20 +161,24 @@ def load_structures_from_xyz_log(dir_path):
     return species_simb, name, stru, ftot_stru, ener
     
 #load structures from xyz gives structures and energies
-def load_structures_from_xyz(dir_xyz):
-    #dir_xyz='/home/arturo/Desktop/ML_MD_FBP/data/xyz'
-    fl_nms= os.listdir(dir_xyz) #file names
-    stru= [] #array with the structures 
-    name= [] 
-    ener= [] #array with the energies
-    species_simb= [] 
-    for ii, fl in enumerate(fl_nms): #fl -> file
+def load_structures_from_xyz(dir_path):
+    fl_nms= os.listdir(dir_path) #file names
+    #print fl_nms
+    comp_str='([a-z A-Z _ - & \. 0-9]+\.xyz)'
+    fl_nms1= re.findall(comp_str,str(fl_nms))
+    #print fl_nms1
+    stru= []
+    name= []
+    ener= []
+    ftot_stru= []
+    species_simb= []
+    for ii, fl in enumerate(fl_nms1):
+        #print fl
         count= 0
         name_fl=fl.split('.')
-        xyz_data= open(dir_xyz+'/'+fl)
+        xyz_data= open(dir_path+'/'+fl)
         xyz_data= xyz_data.readlines()
         numb_atoms= int(xyz_data[0])
-        #x= re.findall('failure!', str(log_data))
         for n in range(int(len(xyz_data)/(2.0+numb_atoms))):
             name.append(fl.split('.')[0]+'_'+str(count))
             ener.append(float(xyz_data[(2+numb_atoms)*n+1].split()[2]))
@@ -183,13 +187,12 @@ def load_structures_from_xyz(dir_xyz):
             for i in range(numb_atoms):
                 temp.append([float(j) for j in xyz_data[(2+numb_atoms)*n+2+i].split()[1:]])
                 temp_spc.append(xyz_data[(2+numb_atoms)*n+2+i].split()[0])
-            stru.append(temp)
+            stru.append(np.array(temp))
             species_simb.append(temp_spc)
             count+=1
     ener= np.array(ener)
     stru= np.array(stru)
-    return species_simb, name, stru, ener
-def load_training(path_training):
+    return species_simb, name, stru, enerdef load_training(path_training):
 	eta2b_03=76.75#eta
 	Rp03= [1.0,1.3,1.6,1.9,2.2,2.5,2.8,3.1,3.4,3.7,4.0,4.3,4.6,4.9,5.2]
 
