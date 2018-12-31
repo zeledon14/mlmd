@@ -19,14 +19,10 @@ For its correct functioning mlmd needs the following codes:
 
 * [Pychemia](https://github.com/MaterialsDiscovery/PyChemia) In case you need to read data from VASP
 
-mlmd installation
+mlmd user manual
 -----------------
 
-
-# Using mlmd
-
-Training (creating) a machine learning potential
-------------------------------------------------
+[mlmd user manual](https://machine-learning-molecular-dynamics.github.io/)
 
 Contributors
 ------------
