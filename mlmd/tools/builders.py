@@ -140,3 +140,48 @@ def build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru
     feat_2b= x2b.shape[0]
     feat_3b= x3b.shape[0]
     return feat_2b, feat_3b,X, DX
+
+def build_FBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru):
+#Builds the array with features, energies, derivatives of the features and forces
+#for the training
+# X -> FBP dimensions (structures, number_of_features)
+#DX -> Derivative of FBP
+#DX dimensions (structures, atoms_in_structure, number_of_features, xyz_components)
+    X= [] #features for energy 
+    #DX= [] # Derivativie of the features, for force
+    for l,s in enumerate(stru):
+        [Rv, R, Rinv, R2, R2inv, cos_m]= geometry.geometrical_parameters(s)
+        [delta_2b, delta_3b]= geometry.delta_2b_delta_3b(species_simb[l], trans, cos_m)
+        #[Rvij, Rvik, Rvjk]= geometry.get_Rvij_Rvik_Rvjk(Rv)
+        #[hatRvij, hatRvik, hatRvjk]= get_hat_Rvij_Rvik_Rvjk(Rv)
+        RRinv= geometry.get_RRinv(Rinv)
+        #[Dcos1, Dcos2]= geometry.get_Dcos(cos_m, RRinv, R2inv, Rvij, Rvik, Rvjk)
+
+        for nn, _ in enumerate(eta2b):# loop over the r 
+            #x_2b_rpij= get_x_2b_rpij(eta2b[nn], Rp[nn], R)
+            x_2b_rpij, Dx_2b_rpij=  get_x_2b_rpij_and_Dx_2b_rpij(eta2b[nn], Rp[nn], R)
+            if nn == 0:
+                x2b=  get_x2b(x_2b_rpij, delta_2b)
+                #Dx2b=  get_DVx2bl(Dx_2b_rpij, delta_2b, Rinv, Rv)
+            else:
+                x2b= np.concatenate((x2b,get_x2b(x_2b_rpij, delta_2b)))
+                #Dx2b= np.concatenate((Dx2b,get_DVx2bl(Dx_2b_rpij, delta_2b, Rinv, Rv)),axis=1)
+
+        for nn, _ in enumerate(eta3b):# loop over the r
+            #x_3b_rpijk= get_x_3b_rpijk(eta3b[nn], cos_p[nn], cos_m)
+            x_3b_rpijk, Dx_3b_rpijk=  get_x_3b_rpijk_and_Dx_3b_rpijk(eta3b[nn], cos_p[nn], cos_m)
+            if nn == 0:
+                x3b=  get_x3b(x_3b_rpijk, delta_3b)
+                #Dx3b=  get_DVx3bl(Dx_3b_rpijk, delta_3b, Dcos1, Dcos2)
+            else:
+                x3b= np.concatenate((x3b, get_x3b(x_3b_rpijk, delta_3b)))
+                #Dx3b= np.concatenate((Dx3b, get_DVx3bl(Dx_3b_rpijk, delta_3b, Dcos1, Dcos2)), axis=1)
+
+        X.append(np.concatenate((x2b,x3b)))
+        #DX.append(np.concatenate((Dx2b,Dx3b), axis=1))
+    X= np.array(X)
+    #DX= np.array(DX)
+    feat_2b= x2b.shape[0]
+    feat_3b= x3b.shape[0]
+    #return feat_2b, feat_3b,X, DX
+    return feat_2b, feat_3b,X
