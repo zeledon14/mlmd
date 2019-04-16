@@ -140,12 +140,12 @@ def build_SIFF_DSIFF(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, st
     feat_2b= x2b.shape[0]
     feat_3b= x3b.shape[0]
     return feat_2b, feat_3b,X, DX
-
-def build_FBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru):
+    
+def build_SIFF(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru):
 #Builds the array with features, energies, derivatives of the features and forces
 #for the training
-# X -> FBP dimensions (structures, number_of_features)
-#DX -> Derivative of FBP
+# X -> SIFF dimensions (structures, number_of_features)
+#DX -> Derivative of SIFF
 #DX dimensions (structures, atoms_in_structure, number_of_features, xyz_components)
     X= [] #features for energy 
     #DX= [] # Derivativie of the features, for force
