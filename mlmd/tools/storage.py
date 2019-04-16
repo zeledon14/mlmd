@@ -3,14 +3,16 @@ import os
 import datetime
 import numpy as np
 def save_features_E_F(feat_2b, feat_3b,feat_name, stru_names,eta2b, Rp, eta3b, cos_p, ftot_stru, ener, X, DX):
-#saves the values of FBP->X, DFBP->DX, Energies, Forces for trainint
+#saves the values of SIFF->X, DSIFF->DX, Energies, Forces for trainint
     #print 'X.shape  ', X.shape
     #print 'DX.shape  ', DX.shape
-    dir_name='features_%s_%d'% (feat_name,X.shape[1])
+    #dir_name='features_%s_%d'% (feat_name,X.shape[1])
+    dir_name='%s'% (feat_name)
     os.mkdir(dir_name)
-    DX_name='%s_DFBP_%d' % (feat_name,X.shape[1])
-    X_name='%s_FBP_%d' % (feat_name,X.shape[1])
+    DX_name='%s_DSIFF_%d' % (feat_name,X.shape[1])
+    X_name='%s_SIFF_%d' % (feat_name,X.shape[1])
     ener_name='%s_energies_%d' % (feat_name,X.shape[1])
+    
     data_name='feature_calculation_summary_%s.txt' % (feat_name)
     np.save(dir_name+'/'+X_name, X)
     np.save(dir_name+'/'+ener_name, ener)
@@ -46,7 +48,7 @@ def save_features_E_F(feat_2b, feat_3b,feat_name, stru_names,eta2b, Rp, eta3b, c
     X_data.close()
 
     #save forces
-    DX_force_dir_name= 'DFBP_force_%s_%d' % (feat_name,X.shape[1])
+    DX_force_dir_name= 'DSIFF_force_%s_%d' % (feat_name,X.shape[1])
     os.mkdir(dir_name+'/'+DX_force_dir_name)
     stru_names_fl= open(dir_name+'/'+DX_force_dir_name+'/structure_names_list','w')
     #print len(stru_names)
@@ -56,8 +58,8 @@ def save_features_E_F(feat_2b, feat_3b,feat_name, stru_names,eta2b, Rp, eta3b, c
             stru_names_fl.write(nm)
         else:
             stru_names_fl.write(','+nm)
-        DX_name='%s_DFBP' %nm
-        DX_name_shape='%s_DFBP_shape' % (nm)
+        DX_name='%s_DSIFF' %nm
+        DX_name_shape='%s_DSIFF_shape' % (nm)
         forc_name='%s_forces' % (nm)
         forc_shape_name='%s_forces_shape' % (nm)
         DX_i= DX[i]

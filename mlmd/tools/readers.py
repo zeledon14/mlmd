@@ -419,18 +419,18 @@ def load_features_from_file(path_to_file):
     ftot_strul=[]#ftot stru load array
     #print files
     for fl in files:
-        if re.findall('_FBP_', str(fl)):
+        if re.findall('_SIFF_', str(fl)):
             X= np.load(dir_name+'/'+str(fl))
         if re.findall('_energies_', str(fl)):
             ener= np.load(dir_name+'/'+str(fl))
-        if re.findall('DFBP_force_', str(fl)):
+        if re.findall('DSIFF_force_', str(fl)):
             stru_names_fl= open(dir_name+'/'+str(fl)+'/structure_names_list')
             stru_names_fl= stru_names_fl.read()
             stru_names_fl= stru_names_fl.split(',')
             for i, nm in enumerate(stru_names_fl):
-                DX_shape= np.load(dir_name+'/'+str(fl)+'/%s_DFBP_shape.npy' % (nm))
+                DX_shape= np.load(dir_name+'/'+str(fl)+'/%s_DSIFF_shape.npy' % (nm))
                 forc_shape= np.load(dir_name+'/'+str(fl)+'/%s_forces_shape.npy' % (nm))
-                DXl.append(np.reshape(np.load(dir_name+'/'+str(fl)+'/%s_DFBP.npy' %nm), DX_shape))
+                DXl.append(np.reshape(np.load(dir_name+'/'+str(fl)+'/%s_DSIFF.npy' %nm), DX_shape))
                 ftot_strul.append(np.reshape(np.load(dir_name+'/'+str(fl)+'/%s_forces.npy' %nm), forc_shape))
     DX= np.array(DXl)
     ftot_stru= np.array(ftot_strul)

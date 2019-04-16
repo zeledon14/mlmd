@@ -65,12 +65,12 @@ if mode == 'create_potential':
 			species_simb, stru_names,stru,ftot_stru,\
 			ener= readers.load_vasp_structures(path_to_dft_data.strip())
 		#calculate the featre representation of the structure
-		#X-> FBP (numb_struc, numb_of_features)
-		#DX -> Derivative of FBP
+		#X-> SIFF (numb_struc, numb_of_features)
+		#DX -> Derivative of SIFF
 		#DX dimensions (structures, atoms_in_structure, number_of_features, xyz_components)
 		#feat_2b numb_of_2-body featues
 		#feat_3b numb_of_3-body featues
-		feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b,\
+		feat_2b, feat_3b,X, DX= builders.build_SIFF_DSIFF(trans, eta2b,\
 								Rp, eta3b, cos_p,species_simb, stru_names, stru)
 
 
@@ -104,7 +104,7 @@ if mode == 'create_potential':
 				#create training objetc
 				training= mlt.mlt(ener, X, ftot_stru, DX)
 				#creating the training and validation sets
-				training.preprocessing_X_FBP(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
+				training.preprocessing_X_SIFF(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
 				n_estimators = GBR_E_n_estimators[GBR_i]
 				max_depth = GBR_E_max_depth[GBR_i]
 				min_samples_split = GBR_E_min_samples_split[GBR_i] 
@@ -120,7 +120,7 @@ if mode == 'create_potential':
 			for GBR_i in range(GBR_F_models_to_train[0]):
 				os.mkdir('model_F_%d'%(model_F_numb))
 				training= mlt.mlt(ener, X, ftot_stru, DX)
-				training.preprocessing_DX_DFBP(validation_percentage[0], 'model_F_%d'%(model_F_numb))
+				training.preprocessing_DX_DSIFF(validation_percentage[0], 'model_F_%d'%(model_F_numb))
 				n_estimators = GBR_F_n_estimators[GBR_i]
 				max_depth = GBR_F_max_depth[GBR_i]
 				min_samples_split = GBR_F_min_samples_split[GBR_i] 
@@ -151,7 +151,7 @@ if mode == 'create_potential':
 				#create training objetc
 				training= mlt.mlt(ener, X, ftot_stru, DX)
 				#creating the training and validation sets
-				training.preprocessing_X_FBP(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
+				training.preprocessing_X_SIFF(validation_percentage[0], ('model_E_%d'%(model_E_numb)))
 				n_estimators = GBR_E_n_estimators[GBR_i]
 				max_depth = GBR_E_max_depth[GBR_i]
 				min_samples_split = GBR_E_min_samples_split[GBR_i] 
@@ -184,7 +184,7 @@ if mode == 'create_potential':
 				os.mkdir(name_to_save)
 				training= mlt.mlt(ener, X, ftot_stru, DX)
 				#creating the training and validation sets
-				training.preprocessing_X_FBP(validation_percentage[0], name_to_save)
+				training.preprocessing_X_SIFF(validation_percentage[0], name_to_save)
 				nn_E_arch= nn_E_architecture[nn_i]
 				learning_rate= nn_E_learning_rate[nn_i]
 				training_steps= nn_E_training_steps[nn_i]
@@ -201,7 +201,7 @@ if mode == 'create_potential':
 				name_to_save= 'model_F_%d'%(model_F_numb)
 				os.mkdir(name_to_save)
 				training= mlt.mlt(ener, X, ftot_stru, DX)
-				training.preprocessing_DX_DFBP(validation_percentage[0], name_to_save)
+				training.preprocessing_DX_DSIFF(validation_percentage[0], name_to_save)
 				nn_F_arch= nn_F_architecture[nn_i]
 				learning_rate= nn_F_learning_rate[nn_i]
 				training_steps= nn_F_training_steps[nn_i]
@@ -232,7 +232,7 @@ if mode == 'create_potential':
 				os.mkdir(name_to_save)
 				training= mlt.mlt(ener, X, ftot_stru, DX)
 				#creating the training and validation sets
-				training.preprocessing_X_FBP(validation_percentage[0], name_to_save)
+				training.preprocessing_X_SIFF(validation_percentage[0], name_to_save)
 				nn_E_arch= nn_E_architecture[nn_i]
 				learning_rate= nn_E_learning_rate[nn_i]
 				training_steps= nn_E_training_steps[nn_i]
@@ -350,7 +350,7 @@ if mode == 'perform_md':
 		potential.load_GBR_E_potential(pote_name)
 		potential.load_GBR_F_potential(pote_name)
 		#calculates feature representation for a given initial structure
-		feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru)
+		feat_2b, feat_3b,X, DX= builders.build_SIFF_DSIFF(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru)
 		#scale the feature representation
 		#with the trainned scalers
 		X_scaled= potential.scaler_E.transform(X)
@@ -381,7 +381,7 @@ if mode == 'perform_md':
 			#print r_out.T
 			#print '*********'
 			stru_t= np.array([r_out.T])
-			feat_2b, feat_3b,X, DX= builders.build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru_t)
+			feat_2b, feat_3b,X, DX= builders.build_SIFF_DSIFF(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru_t)
 			#scale features from r_out
 			X_scaled= potential.scaler_E.transform(X)
 			DXx_scaled= potential.scaler_Fx.transform(DX[0,:,:,0])

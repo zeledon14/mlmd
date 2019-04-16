@@ -97,11 +97,11 @@ def get_DVx2bl(Dx_2b_rpij, delta_2b, Rinv, Rv):
 #  |1 2 3|
 #A=|4 5 6| after the reshape A =[1,2,3,4,5,6,7,8,9]
 #  |7 8 9|
-def build_FBP_DFBP(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru):
+def build_SIFF_DSIFF(trans, eta2b, Rp, eta3b, cos_p,species_simb, stru_names, stru):
 #Builds the array with features, energies, derivatives of the features and forces
 #for the training
-# X -> FBP dimensions (structures, number_of_features)
-#DX -> Derivative of FBP
+# X -> SIFF dimensions (structures, number_of_features)
+#DX -> Derivative of SIFF
 #DX dimensions (structures, atoms_in_structure, number_of_features, xyz_components)
     X= [] #features for energy 
     DX= [] # Derivativie of the features, for force

@@ -5,14 +5,15 @@ from sklearn.externals import joblib
 from sklearn import ensemble
 from sklearn.metrics import mean_squared_error
 class mlt:
-	def __init__(self, E, X, ftot_stru, DX):
+	def __init__(self, E, X, ftot_stru = None, DX = None):
 		self.E= E #array (1-d) with energies for training and validation
 		self.X= X  #array (numb_struc, numb_feat) with featues for training and validation
-		self.ftot_stru= ftot_stru #(num_struc,num_atoms_in_struc,3d_comp) 
-		self.DX= DX #(num_struc,num_atoms_in_struc, numb_of_feat, 3d_comp) 
+		if ftot_stru != None:
+			self.ftot_stru= ftot_stru #(num_struc,num_atoms_in_struc,3d_comp) 
+			self.DX= DX #(num_struc,num_atoms_in_struc, numb_of_feat, 3d_comp) 
 		#DX vectorial derivative of X, DX= nabla(X)
 		return None
-	def preprocessing_DX_DFBP_for_nn(self, validation_percentage, name_to_save):
+	def preprocessing_DX_DSIFF_for_nn(self, validation_percentage, name_to_save):
 		#scaling and divition between validation and training sets
 		for i in range(len(self.DX)):
 			if i == 0:
@@ -52,7 +53,7 @@ class mlt:
 		self.Fnn_trai= Ft[mixer[:n]]
 		self.Fnn_vali= Ft[mixer[n:]]
 		return None
-	def preprocessing_X_FBP(self, validation_percentage, name_to_save):
+	def preprocessing_X_SIFF(self, validation_percentage, name_to_save):
 		#scaling and divition between validation and training sets
 		scaler= preprocessing.MaxAbsScaler()
 		X_scaled= scaler.fit_transform(self.X)
@@ -67,7 +68,7 @@ class mlt:
 		filename = '%s/scaler_E.sav' % name_to_save
 		joblib.dump(scaler, filename)
 		return None
-	def preprocessing_DX_DFBP(self, validation_percentage, name_to_save):
+	def preprocessing_DX_DSIFF(self, validation_percentage, name_to_save):
 		#scaling and divition between validation and training sets
 		for i in range(len(self.DX)):
 			if i == 0:
@@ -128,6 +129,17 @@ class mlt:
 		filename = '%s/GBR_E.sav' % name_to_save
 		joblib.dump(clf, filename)
 		return mse
+		
+	def GBR_train_evaluate_E_model(self, parameters_dict):
+		# Gradient Boosting Regression for energy 
+		clf = ensemble.GradientBoostingRegressor(**parameters_dict)
+		clf.fit(self.X_trai, self.E_trai)
+		mse = mean_squared_error(self.E_vali, clf.predict(self.X_vali))
+		#print mse
+		# save the model to disk
+		#filename = '%s/GBR_E.sav' % name_to_save
+		#joblib.dump(clf, filename)
+		return mse, clf
 
 	def GBR_F_model(self, name_to_save, comp, parameters_dict):
 		#select which component of data to use between (x,y,z)
@@ -154,6 +166,32 @@ class mlt:
 		filename = '%s/GBR_F_comp_%d.sav' % (name_to_save, comp)
 		joblib.dump(clf, filename)
 		return mse
+		
+	def GBR_train_evaluate_F_model(self, comp, parameters_dict):
+		#select which component of data to use between (x,y,z)
+		#the components are represented as x=0, y=1, z=2
+		if comp == 0:
+			DX_trai = self.DXx_trai
+			DX_vali = self.DXx_vali
+			f_trai= self.Fx_trai
+			f_vali= self.Fx_vali
+		elif comp == 1:
+			DX_trai = self.DXy_trai
+			DX_vali = self.DXy_vali
+			f_trai= self.Fy_trai
+			f_vali= self.Fy_vali
+		elif comp == 2:
+			DX_trai = self.DXz_trai
+			DX_vali = self.DXz_vali
+			f_trai= self.Fz_trai
+			f_vali= self.Fz_vali
+		#train the model for force 
+		clf = ensemble.GradientBoostingRegressor(**parameters_dict)
+		clf.fit(DX_trai, f_trai)
+		mse = mean_squared_error(f_vali, clf.predict(DX_vali))
+		#filename = '%s/GBR_F_comp_%d.sav' % (name_to_save, comp)
+		#joblib.dump(clf, filename)
+		return mse, clf
 	#neural networks (nn) models
 	def create_E_nn_variables(self, nn_arch):
 		weights= []
