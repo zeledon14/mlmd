@@ -68,6 +68,21 @@ class mlt:
 		filename = '%s/scaler_E.sav' % name_to_save
 		joblib.dump(scaler, filename)
 		return None
+		
+	def preprocessing_X_SIFF_return_scaler(self, validation_percentage):
+		#scaling and divition between validation and training sets
+		scaler= preprocessing.MaxAbsScaler()
+		X_scaled= scaler.fit_transform(self.X)
+		mixer= np.array(range(X_scaled.shape[0]))
+		for _ in range(1000):
+			np.random.shuffle(mixer)
+		n= int(len(mixer)*(1.0 - validation_percentage/100.0)) # marking the 90%
+		self.X_trai= X_scaled[mixer[:n]]
+		self.X_vali= X_scaled[mixer[n:]]
+		self.E_trai= self.E[mixer[:n]]
+		self.E_vali= self.E[mixer[n:]]
+		return scaler_E
+		
 	def preprocessing_DX_DSIFF(self, validation_percentage, name_to_save):
 		#scaling and divition between validation and training sets
 		for i in range(len(self.DX)):
@@ -118,7 +133,55 @@ class mlt:
 		self.DXz_vali= DXz_scaled[mixer[n:]]
 		self.Fz_trai= Fz[mixer[:n]]
 		self.Fz_vali= Fz[mixer[n:]]
-		return None				#machine learning models GBR (gradient boosting regression)
+		return None		
+		
+	def preprocessing_DX_DSIFF_return_scaler(self, validation_percentage):
+		#scaling and divition between validation and training sets
+		for i in range(len(self.DX)):
+			if i == 0:
+				DXp= self.DX[i]
+				Ft= self.ftot_stru[i]
+			else:
+				DXp= np.concatenate((DXp, self.DX[i]), axis= 0)
+				Ft= np.concatenate((Ft, self.ftot_stru[i]), axis= 0)
+		DXx= DXp[:,:,0]
+		DXy= DXp[:,:,1]
+		DXz= DXp[:,:,2]
+		Fx= Ft[:,0]
+		Fy= Ft[:,1]
+		Fz= Ft[:,2]
+		scaler_x= preprocessing.MaxAbsScaler()
+		DXx_scaled= scaler_x.fit_transform(DXx)
+		
+		scaler_y= preprocessing.MaxAbsScaler()
+		DXy_scaled= scaler_y.fit_transform(DXy)
+		
+		scaler_z= preprocessing.MaxAbsScaler()
+		DXz_scaled= scaler_z.fit_transform(DXz)
+		
+		mixer= np.array(range(DXx_scaled.shape[0]))
+		for _ in range(1000):
+			np.random.shuffle(mixer)
+		n= int(len(mixer)*(1.0 - validation_percentage/100.0)) # marking the 90%
+		self.DXx_trai= DXx_scaled[mixer[:n]]
+		self.DXx_vali= DXx_scaled[mixer[n:]]
+		#DXx x component of nabla(X) 
+		#DXx x(numb_of_atoms = numb_of_struc*numb_atoms_in_struc, numb_of_feaures)
+		self.Fx_trai= Fx[mixer[:n]]
+		self.Fx_vali= Fx[mixer[n:]]	
+		#Fx x component of force 1-d array
+		#Fx (numb_of_atoms = numb_of_struc*numb_atoms_in_struc)
+		self.DXy_trai= DXy_scaled[mixer[:n]]
+		self.DXy_vali= DXy_scaled[mixer[n:]]
+		self.Fy_trai= Fy[mixer[:n]]
+		self.Fy_vali= Fy[mixer[n:]]	
+		self.DXz_trai= DXz_scaled[mixer[:n]]
+		self.DXz_vali= DXz_scaled[mixer[n:]]
+		self.Fz_trai= Fz[mixer[:n]]
+		self.Fz_vali= Fz[mixer[n:]]
+		return [scaler_x, scaler_y, scaler_z]		
+		
+#machine learning models GBR (gradient boosting regression)
 	def GBR_E_model(self, name_to_save, parameters_dict):
 		# Gradient Boosting Regression for energy 
 		clf = ensemble.GradientBoostingRegressor(**parameters_dict)
