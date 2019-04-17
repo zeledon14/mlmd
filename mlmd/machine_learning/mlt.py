@@ -71,8 +71,8 @@ class mlt:
 		
 	def preprocessing_X_SIFF_return_scaler(self, validation_percentage):
 		#scaling and divition between validation and training sets
-		scaler= preprocessing.MaxAbsScaler()
-		X_scaled= scaler.fit_transform(self.X)
+		scaler_E= preprocessing.MaxAbsScaler()
+		X_scaled= scaler_E.fit_transform(self.X)
 		mixer= np.array(range(X_scaled.shape[0]))
 		for _ in range(1000):
 			np.random.shuffle(mixer)
