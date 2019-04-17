@@ -1,7 +1,7 @@
 #training.in
 #setting up the training parameters
 # path where the data for training is stored
-path_to_data ../mlmd_data_test_fireball/dft_data 
+path_to_data dft_data 
 #code used to generate the data
 #1-> abinit 2-> fireball 3-> vasp
 code 2
