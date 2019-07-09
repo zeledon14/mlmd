@@ -193,6 +193,29 @@ def load_structures_from_xyz(dir_path):
     ener= np.array(ener)
     stru= np.array(stru)
     return species_simb, name, stru, ener
+
+def load_structure_from_xyz_file(path):
+    stru= []
+    species_simb= []
+
+    if os.path.isfile(path):
+        xyz_data= open(path)
+        xyz_data= xyz_data.readlines()
+        numb_atoms= int(xyz_data[0])
+        count= 0
+        for n in range(int(len(xyz_data)/(2.0+numb_atoms))):
+            temp= []
+            temp_spc=[]
+            for i in range(numb_atoms):
+                temp.append([float(j) for j in xyz_data[(2+numb_atoms)*n+2+i].split()[1:]])
+                temp_spc.append(xyz_data[(2+numb_atoms)*n+2+i].split()[0])
+            stru.append(np.array(temp))
+            species_simb.append(temp_spc)
+            count+=1
+            
+    stru= np.array(stru)
+    return species_simb[0], np.squeeze(stru)
+
 def load_training(path_training):
 	eta2b_03=76.75#eta
 	Rp03= [1.0,1.3,1.6,1.9,2.2,2.5,2.8,3.1,3.4,3.7,4.0,4.3,4.6,4.9,5.2]
